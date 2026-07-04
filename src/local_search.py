@@ -191,64 +191,143 @@ def generate_report(date_str: str, recommendation: dict, all_restaurants: dict, 
 
     client = genai.Client(api_key=api_key)
 
-    # 맛집 정보 텍스트 변환
+    # ── 맛집 텍스트 변환 ──
     restaurants_text = ""
     for city, items in all_restaurants.items():
         restaurants_text += f"\n[{city}]\n"
-        for r in items:
-            restaurants_text += f"  - {r['name']} ({r['category']}) / {r['address']}\n"
+        if items:
+            for r in items:
+                restaurants_text += f"  - {r['name']} ({r['category']}) / {r['address']}\n"
+        else:
+            restaurants_text += "  - 데이터 없음\n"
 
-    prompt = (
-        f"여행 날짜: {date_str}\n"
-        f"추천 도시: {', '.join(recommendation.get('recommended_cities', []))}\n"
-        f"날씨: {recommendation.get('weather', '')}\n"
-        f"추천 이유: {recommendation.get('reason', '')}\n"
-        f"주요 행사: {', '.join(recommendation.get('events', []))}\n"
-        f"도시별 맛집 정보:{restaurants_text}\n"
-        "위 정보를 바탕으로 여행 리포트를 작성해 주세요."
-    )
+    # ── 행사/축제 텍스트 변환 ──
+    events = recommendation.get("events", [])
+    if isinstance(events, list) and events:
+        events_text = "\n".join(f"  - {e}" for e in events)
+    elif isinstance(events, dict):
+        # dict 형태일 경우 (city: [events]) 펼치기
+        event_lines = []
+        for city, ev_list in events.items():
+            for e in ev_list:
+                event_lines.append(f"  - [{city}] {e}")
+        events_text = "\n".join(event_lines) if event_lines else "  - 데이터 없음"
+    else:
+        events_text = "  - 데이터 없음"
 
-    try:
-        print("  🤖 Gemini 호출 중...")
-        response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=(
-                    "당신은 여행 리포트 작성 전문가입니다. "
-                    "주어진 정보를 바탕으로 읽기 좋은 여행 리포트를 한국어로 작성하세요. "
-                    "이모지를 적절히 활용하고, 각 도시의 특징과 맛집을 자연스럽게 소개해 주세요."
+    # ── 프롬프트 ──
+    prompt = f"""여행 날짜: {date_str}
+추천 도시: {', '.join(recommendation.get('recommended_cities', []))}
+날씨: {recommendation.get('weather', '정보 없음')}
+추천 이유: {recommendation.get('reason', '정보 없음')}
+
+행사/축제 목록:
+{events_text}
+
+도시별 맛집 정보:
+{restaurants_text}
+
+위 정보를 바탕으로 아래 형식에 맞춰 여행 리포트를 작성해 주세요.
+반드시 5개 섹션을 모두 포함해야 합니다.
+
+## 1. 추천 지역 및 추천 이유
+(추천 도시와 선정 이유를 자연스럽게 서술)
+
+## 2. 날씨 요약
+(날씨 정보를 여행자 관점에서 서술)
+
+## 3. 행사 / 축제 목록
+(제공된 행사/축제를 목록으로 정리. 없으면 "데이터 없음" 표기)
+
+## 4. 맛집 리스트
+(도시별로 맛집을 정리. 각 맛집마다 카테고리와 주소를 포함하고,
+ 음식 종류와 지역 특색을 반영한 한줄 소개 코멘트를 추가.
+ 맛집 정보가 없으면 "데이터 없음" 표기)
+
+## 5. 1일 여행 일정 제안
+(추천 도시가 여러 곳이면 도시마다 ### 도시명 소제목으로 구분하여
+ 각각 오전 / 오후 / 저녁 일정을 구체적으로 제안)
+"""
+
+    # ── 섹션 검증용 ──
+    required_sections = ["## 1.", "## 2.", "## 3.", "## 4.", "## 5."]
+
+    for attempt in range(1, 4):  # 최대 3회 재시도
+        try:
+            print(f"  🤖 Gemini 호출 중... (시도 {attempt}/3)")
+            response = client.models.generate_content(
+                model="gemini-3.1-flash-lite",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=(
+                        "당신은 여행 리포트 작성 전문가입니다. "
+                        "주어진 정보를 바탕으로 읽기 좋은 여행 리포트를 한국어 Markdown 형식으로 작성하세요. "
+                        "반드시 요청된 5개 섹션(## 1. ~ ## 5.)을 모두 포함해야 합니다. "
+                        "이모지를 적절히 활용하고, 각 도시의 특징과 맛집을 자연스럽게 소개해 주세요."
+                    ),
+                    temperature=0.7,
                 ),
-                temperature=0.7,
-            ),
-        )
-        print("  ✅ 리포트 생성 완료")
-        return response.text
+            )
 
-    except Exception as e:
-        errors.append({"step": "report", "type": "API_ERROR", "message": str(e)})
-        print(f"  ❌ 리포트 생성 실패: {e}")
-        return _default_report(date_str, recommendation, all_restaurants)
+            report = response.text
+
+            # ── 섹션 검증 ──
+            missing = [s for s in required_sections if s not in report]
+            if missing:
+                print(f"  ⚠️  누락 섹션 감지 {missing} → 재시도")
+                continue
+
+            print("  ✅ 리포트 생성 완료")
+            return report
+
+        except Exception as e:
+            errors.append({"step": "report", "type": "API_ERROR", "message": f"시도 {attempt}: {str(e)}"})
+            print(f"  ❌ 리포트 생성 실패 (시도 {attempt}/3): {e}")
+
+    # 3회 모두 실패
+    print("  ⚠️  3회 실패 → 기본 리포트 반환")
 
 # ── 기본 리포트 (LLM 실패 시) ────────────────────────────────
 def _default_report(date_str: str, recommendation: dict, all_restaurants: dict) -> str:
-    cities = ", ".join(recommendation.get("recommended_cities", []))
+    """LLM 실패 시 데이터를 그대로 나열한 기본 리포트"""
     lines = [
-        f"📅 여행 날짜: {date_str}",
-        f"🏙️  추천 도시: {cities}",
-        f"🌤️  날씨: {recommendation.get('weather', '')}",
-        f"💡 추천 이유: {recommendation.get('reason', '')}",
-        f"🎉 주요 행사: {', '.join(recommendation.get('events', []))}",
+        f"# 🗺️ 여행 리포트 ({date_str})",
         "",
-        "🍽️  도시별 맛집 정보",
+        "## 1. 추천 지역 및 추천 이유",
+        f"- 추천 도시: {', '.join(recommendation.get('recommended_cities', []))}",
+        f"- 추천 이유: {recommendation.get('reason', '정보 없음')}",
+        "",
+        "## 2. 날씨 요약",
+        f"- {recommendation.get('weather', '정보 없음')}",
+        "",
+        "## 3. 행사 / 축제 목록",
     ]
-    for city, items in all_restaurants.items():
-        lines.append(f"\n  [{city}]")
-        if items:
-            for r in items:
-                lines.append(f"  - {r['name']} ({r['category']}) / {r['address']}")
-        else:
-            lines.append("  - 검색 결과 없음")
+
+    events = recommendation.get("events", [])
+    if events:
+        for e in events:
+            lines.append(f"- {e}")
+    else:
+        lines.append("- 데이터 없음")
+
+    lines += ["", "## 4. 맛집 리스트"]
+    if all_restaurants:
+        for city, items in all_restaurants.items():
+            lines.append(f"\n### {city}")
+            if items:
+                for r in items:
+                    lines.append(f"- {r['name']} ({r['category']}) / {r['address']}")
+            else:
+                lines.append("- 데이터 없음")
+    else:
+        lines.append("- 데이터 없음")
+
+    lines += [
+        "",
+        "## 5. 1일 여행 일정 제안",
+        "- (리포트 생성 실패로 일정 제안 불가)",
+    ]
+
     return "\n".join(lines)
 
 # ── 메인 함수 ───────────────────────────────────────────────
