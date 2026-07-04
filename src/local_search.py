@@ -32,32 +32,32 @@ def _default_recommendation() -> dict:
         "reason": "탁 트인 해안 절경과 함께 여유로운 시간을 보낼 수 있습니다."
     }
 
-# ── 캐시 경로 생성 ──────────────────────────────────────────
+# ── 원본 데이터(캐시) 경로 생성 ──────────────────────────────
 def _cache_path(date_str: str) -> Path:
-    cache_dir = Path("cache")
+    cache_dir = Path("results")
     cache_dir.mkdir(exist_ok=True)  # 폴더 없으면 자동 생성
     return cache_dir / f"{date_str}_raw.json"
 
-# ── 캐시 저장 ───────────────────────────────────────────────
+# ── 원본 데이터(캐시) 저장 ───────────────────────────────────
 def _save_cache(date_str: str, data: dict):
     try:
         _cache_path(date_str).write_text(
             json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        print(f"  💾 캐시 저장 완료: {date_str}_raw.json")
+        print(f"  💾 원본 데이터(JSON) 저장 완료: results/{date_str}_raw.json")
     except Exception as e:
-        print(f"  ⚠️  캐시 저장 실패: {e}")
+        print(f"  ⚠️  원본 데이터 저장 실패: {e}")
 
-# ── 캐시 로드 ───────────────────────────────────────────────
+# ── 원본 데이터(캐시) 로드 ───────────────────────────────────
 def _load_cache(date_str: str) -> dict | None:
     path = _cache_path(date_str)
     if path.exists():
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            print(f"  📂 캐시 로드 완료: {date_str}_raw.json")
+            print(f"  📂 원본 데이터 로드 완료: results/{date_str}_raw.json")
             return data
         except Exception as e:
-            print(f"  ⚠️  캐시 로드 실패 (무시하고 API 호출): {e}")
+            print(f"  ⚠️  원본 데이터 로드 실패 (무시하고 API 호출): {e}")
     return None
 
 def _save_report(date_str: str, report: str):
@@ -75,7 +75,7 @@ def _load_report(date_str: str) -> str | None:
     if path.exists():
         try:
             report = path.read_text(encoding="utf-8")
-            print(f"  📂 리포트 캐시 로드 완료: results/{date_str}_report.md")
+            print(f"  📂 리포트 파일 로드 완료: results/{date_str}_report.md")
             return report
         except Exception as e:
             print(f"  ⚠️  리포트 로드 실패 (무시하고 재생성): {e}")
@@ -90,42 +90,59 @@ def get_recommendation(date_kor: str, errors: list) -> dict:
         sys.exit(1)
 
     client = genai.Client(api_key=api_key)
+    prompt_text = f"여행 날짜: {date_kor}. 국내 여행지를 추천해 주세요."
 
-    try:
-        print("  🤖 Gemini 호출 중...")
-        response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents=f"여행 날짜: {date_kor}. 국내 여행지를 추천해 주세요.",
-            config=types.GenerateContentConfig(
-                system_instruction=(
-                    "당신은 국내 여행 전문가입니다. 반드시 JSON으로 응답하세요. "
-                    "형식: {\"recommended_cities\": [\"도시1\", \"도시2\", \"도시3\"], "
-                    "\"weather\": \"날씨 설명\", \"events\": [\"행사1\", \"행사2\"], "
-                    "\"reason\": \"추천 이유\"}"
+    # 최대 2회 시도 (1차 시도 + 파싱 실패 시 재시도 1회)
+    for attempt in range(1, 3):
+        try:
+            print(f"  🤖 Gemini 호출 중... (시도 {attempt}/2)")
+            response = client.models.generate_content(
+                model=os.getenv("GEMINI_MODEL_NAME"),
+                contents=prompt_text,
+                config=types.GenerateContentConfig(
+                    system_instruction=(
+                        "당신은 국내 여행 전문가입니다. 반드시 JSON으로 응답하세요. "
+                        "형식: {\"recommended_cities\": [\"도시1\", \"도시2\", \"도시3\"], "
+                        "\"weather\": \"날씨 설명\", \"events\": [\"행사1\", \"행사2\"], "
+                        "\"reason\": \"추천 이유\"}"
+                    ),
+                    response_mime_type="application/json",
+                    temperature=0.7,
                 ),
-                response_mime_type="application/json",
-                temperature=0.7,
-            ),
-        )
+            )
 
-        result = json.loads(response.text)
+            result = json.loads(response.text)
 
-        # 필수 키 검증
-        required = ["recommended_cities", "weather", "events", "reason"]
-        if not all(k in result for k in required):
-            raise ValueError("필수 키 누락")
+            # 필수 키 검증
+            required = ["recommended_cities", "weather", "events", "reason"]
+            if not all(k in result for k in required):
+                raise ValueError("필수 키 누락")
 
-        # recommended_cities 리스트 검증
-        if not isinstance(result["recommended_cities"], list) or len(result["recommended_cities"]) == 0:
-            raise ValueError("recommended_cities가 비어있거나 리스트가 아님")
+            # recommended_cities 리스트 검증
+            if not isinstance(result["recommended_cities"], list) or len(result["recommended_cities"]) == 0:
+                raise ValueError("recommended_cities가 비어있거나 리스트가 아님")
 
-        print(f"  ✅ 추천 도시: {', '.join(result['recommended_cities'])}")
-        return result
+            print(f"  ✅ 추천 도시: {', '.join(result['recommended_cities'])}")
+            return result
 
-    except Exception as e:
-        errors.append({"step": "llm", "type": "API_ERROR", "message": str(e)})
-        print(f"  ❌ Gemini 호출 실패: {e}")
-        return _default_recommendation()
+        # 파싱 및 검증 실패 시 예외 처리 (1회 재시도 대상)
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"  ⚠️ JSON 파싱 또는 검증 실패 (시도 {attempt}/2): {e}")
+            if attempt == 1:
+                print("  🔄 프롬프트를 수정하여 1회 재시도합니다.")
+                # 요구사항에 맞게 프롬프트 강화
+                prompt_text += "\n\n주의: 반드시 필수 키만 포함된 순수 JSON 형식으로만 출력하세요. 다른 텍스트나 설명은 절대 포함하지 마세요."
+                continue
+            else:
+                errors.append({"step": "llm", "type": "PARSE_ERROR", "message": f"2회 파싱 실패: {str(e)}"})
+                print("  ❌ 2차 시도도 실패하여 기본값으로 진행합니다.")
+                return _default_recommendation()
+
+        # 네트워크 연결, 인증 등 그 외 API 오류는 즉시 실패 처리
+        except Exception as e:
+            errors.append({"step": "llm", "type": "API_ERROR", "message": str(e)})
+            print(f"  ❌ Gemini 호출 실패: {e}")
+            return _default_recommendation()
 
 # ── 지역 맛집 추천 함수 ──────────────────────────────────────
 def search_restaurants(city: str, errors: list, limit: int = 5) -> list:
@@ -187,7 +204,7 @@ def generate_report(date_str: str, recommendation: dict, all_restaurants: dict, 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         errors.append({"step": "report", "type": "KEY_MISSING", "message": "GEMINI_API_KEY 없음"})
-        return _default_report(date_str, recommendation, all_restaurants)
+        return _default_report(date_str, recommendation, all_restaurants, errors)
 
     client = genai.Client(api_key=api_key)
 
@@ -251,12 +268,13 @@ def generate_report(date_str: str, recommendation: dict, all_restaurants: dict, 
 
     # ── 섹션 검증용 ──
     required_sections = ["## 1.", "## 2.", "## 3.", "## 4.", "## 5."]
+    final_report = ""
 
     for attempt in range(1, 4):  # 최대 3회 재시도
         try:
             print(f"  🤖 Gemini 호출 중... (시도 {attempt}/3)")
             response = client.models.generate_content(
-                model="gemini-3.1-flash-lite",
+                model=os.getenv("GEMINI_MODEL_NAME"),
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=(
@@ -278,17 +296,30 @@ def generate_report(date_str: str, recommendation: dict, all_restaurants: dict, 
                 continue
 
             print("  ✅ 리포트 생성 완료")
-            return report
+            final_report = report
+            break  # 성공 시 루프 탈출
 
         except Exception as e:
             errors.append({"step": "report", "type": "API_ERROR", "message": f"시도 {attempt}: {str(e)}"})
             print(f"  ❌ 리포트 생성 실패 (시도 {attempt}/3): {e}")
 
-    # 3회 모두 실패
-    print("  ⚠️  3회 실패 → 기본 리포트 반환")
+    # 3회 모두 실패한 경우
+    if not final_report:
+        print("  ⚠️  3회 실패 → 기본 리포트 반환")
+        return _default_report(date_str, recommendation, all_restaurants, errors)
+
+    # ── 오류 요약 섹션 추가 ──
+    final_report += "\n\n## 오류 요약(errors)\n"
+    if errors:
+        for err in errors:
+            final_report += f"- **[{err['step']}]**: {err['type']} - {err['message']}\n"
+    else:
+        final_report += "- 발생한 오류 없음\n"
+
+    return final_report
 
 # ── 기본 리포트 (LLM 실패 시) ────────────────────────────────
-def _default_report(date_str: str, recommendation: dict, all_restaurants: dict) -> str:
+def _default_report(date_str: str, recommendation: dict, all_restaurants: dict, errors: list) -> str:
     """LLM 실패 시 데이터를 그대로 나열한 기본 리포트"""
     lines = [
         f"# 🗺️ 여행 리포트 ({date_str})",
@@ -328,6 +359,15 @@ def _default_report(date_str: str, recommendation: dict, all_restaurants: dict) 
         "- (리포트 생성 실패로 일정 제안 불가)",
     ]
 
+    # ── 오류 요약 추가 ──
+    lines.append("")
+    lines.append("## 오류 요약(errors)")
+    if errors:
+        for err in errors:
+            lines.append(f"- **[{err['step']}]**: {err['type']} - {err['message']}")
+    else:
+        lines.append("- 발생한 오류 없음")
+
     return "\n".join(lines)
 
 # ── 메인 함수 ───────────────────────────────────────────────
@@ -347,6 +387,7 @@ def main():
     if cached:
         recommendation = cached.get("recommendation", _default_recommendation())
         all_restaurants = cached.get("restaurants", {})
+        errors = cached.get("errors", []) # 캐시된 에러도 불러옴
         print("  ✅ 캐시 데이터 사용 (LLM 추천 + 맛집 검색 생략)")
 
         cached_report = _load_report(date_str)
@@ -358,7 +399,7 @@ def main():
             print(cached_report)
             return  # 리포트까지 있으면 종료
 
-        # ✅ raw 캐시는 있지만 리포트가 없는 경우 → 리포트만 생성
+        # ✅ raw 데이터는 있지만 리포트가 없는 경우 → 리포트만 생성
         print("\n[3/3] 리포트 생성 중 (LLM)...")
         report = generate_report(date_str, recommendation, all_restaurants, errors)
         _save_report(date_str, report)
@@ -381,10 +422,11 @@ def main():
         print(f"  🔍 {city} 검색 중...")
         all_restaurants[city] = search_restaurants(city, errors)
 
-    # raw 캐시 저장
+    # ── 원본 데이터(raw) JSON에 errors 포함하여 저장 ──
     _save_cache(date_str, {
         "recommendation": recommendation,
-        "restaurants": all_restaurants
+        "restaurants": all_restaurants,
+        "errors": errors
     })
 
     # [3/3] 리포트 생성
@@ -398,11 +440,11 @@ def main():
     print("=" * 50)
     print(report)
 
-    # 에러 로그 출력
+    # 터미널 에러 출력 간소화
     if errors:
-        print(f"\n⚠️  내부 오류 발생 기록 ({len(errors)}건):")
+        print(f"\n⚠️  총 {len(errors)}개의 오류가 발생했습니다. (상세 내용은 {date_str}_raw.json 참조)")
         for err in errors:
-            print(f"  - [{err['step']}] {err['type']}: {err['message']}")
+            print(f"  - [{err['step']}] 단계에서 오류 발생")
 
 if __name__ == "__main__":
     main()
