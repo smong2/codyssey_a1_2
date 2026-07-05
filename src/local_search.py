@@ -14,6 +14,7 @@ load_dotenv()
 from google import genai
 from google.genai import types
 
+#-- cli 명령어 구조 정의
 def parse_args():
     parser = argparse.ArgumentParser(
         description="날짜를 입력받아 여행 정보를 추천하고 리포트를 생성합니다.",
@@ -23,17 +24,12 @@ def parse_args():
     # required=True를 추가하고, help 메시지를 구체적으로 작성합니다.
     parser.add_argument(
         "--date", 
+        type=parse_date,
         required=True, 
         help="여행 날짜를 YYYY-MM-DD 형식으로 입력하세요 (예: 2026-07-05)"
     )
     
-    try:
-        return parser.parse_args()
-    except SystemExit:
-        # 옵션이 빠졌을 때 출력되는 기본 에러를 가로채서 더 친절하게 안내할 수 있습니다.
-        print("\n[오류] --date 옵션이 필요합니다.")
-        print("사용 예시: python local_search.py --date 2026-07-05")
-        sys.exit(1)
+    return parser.parse_args()
 
 # ── 날짜 검증 함수 ─────────────────────────────────────────
 def parse_date(value: str) -> datetime:
