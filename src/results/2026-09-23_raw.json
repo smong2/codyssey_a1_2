@@ -1,0 +1,145 @@
+{
+  "recommendation": {
+    "recommended_cities": [
+      "경주",
+      "춘천",
+      "순천"
+    ],
+    "weather": "9월 하순은 전국적으로 선선한 가을 날씨가 이어지며, 일교차가 크고 하늘이 맑아 야외 활동을 하기에 최적입니다.",
+    "events": [
+      "경주 문화재 야행",
+      "순천만 갈대축제 준비 기간",
+      "춘천 호수별빛나라 축제"
+    ],
+    "reason": "9월 말은 무더위가 완전히 가시고 단풍이 시작되기 전이라 걷기 여행이나 역사 유적지 탐방, 호수 산책 등을 즐기기에 가장 쾌적한 시기입니다."
+  },
+  "restaurants": {
+    "경주": [
+      {
+        "name": "포석로 소갈비찜",
+        "address": "경상북도 경주시 포석로1068번길 22",
+        "category": "음식점>한식",
+        "url": "https://www.instagram.com/poseok_ro",
+        "x": 129.2118391,
+        "y": 35.8359027
+      },
+      {
+        "name": "큰기와 황리단길 본점",
+        "address": "경상북도 경주시 첨성로49번길 22 1층",
+        "category": "한식>육류,고기요리",
+        "url": "",
+        "x": 129.2079072,
+        "y": 35.8349813
+      },
+      {
+        "name": "우마왕 경주본점",
+        "address": "경상북도 경주시 숲머리길 168",
+        "category": "한식>갈비탕",
+        "url": "https://smartstore.naver.com/woomawang",
+        "x": 129.2542505,
+        "y": 35.8428658
+      },
+      {
+        "name": "청온채",
+        "address": "경상북도 경주시 포석로1079번길 8-5 청온채",
+        "category": "음식점>한식",
+        "url": "https://app.catchtable.co.kr/ct/shop/cheongonchae",
+        "x": 129.2087986,
+        "y": 35.8376216
+      },
+      {
+        "name": "황남빵",
+        "address": "경상북도 경주시 태종로 783",
+        "category": "카페,디저트>베이커리",
+        "url": "https://hwangnam.com",
+        "x": 129.2136375,
+        "y": 35.8408903
+      }
+    ],
+    "춘천": [
+      {
+        "name": "통나무집닭갈비 본점",
+        "address": "강원특별자치도 춘천시 신북읍 신샘밭로 763",
+        "category": "육류,고기요리>닭갈비",
+        "url": "https://tongnamushop.com/",
+        "x": 127.793268,
+        "y": 37.933092
+      },
+      {
+        "name": "감자밭",
+        "address": "강원특별자치도 춘천시 신북읍 신샘밭로 674",
+        "category": "카페,디저트>베이커리",
+        "url": "http://www.gamzabatt.com",
+        "x": 127.7844985,
+        "y": 37.9296125
+      },
+      {
+        "name": "라모스버거",
+        "address": "강원특별자치도 춘천시 옛경춘로 835",
+        "category": "음식점>햄버거",
+        "url": "http://pf.kakao.com/_xfxgxbxbxd",
+        "x": 127.7080409,
+        "y": 37.8718343
+      },
+      {
+        "name": "맥도날드 춘천퇴계DT점",
+        "address": "강원특별자치도 춘천시 영서로 2173",
+        "category": "양식>햄버거",
+        "url": "https://www.mcdonalds.co.kr/",
+        "x": 127.7311232,
+        "y": 37.8591839
+      },
+      {
+        "name": "리버레인",
+        "address": "강원특별자치도 춘천시 영서로 2529-47",
+        "category": "음식점>카페,디저트",
+        "url": "https://www.instagram.com/riverain.cafe/",
+        "x": 127.7120233,
+        "y": 37.8846382
+      }
+    ],
+    "순천": [
+      {
+        "name": "도원경",
+        "address": "전남광주통합특별시 순천시 순천만길 309 1층 도원경",
+        "category": "한식>한정식",
+        "url": "https://smartstore.naver.com/dowongyoung",
+        "x": 127.5042778,
+        "y": 34.9025533
+      },
+      {
+        "name": "순천게장 낭만별식 신대국가정원점",
+        "address": "전남광주통합특별시 순천시 해룡면 매안로 72 1층",
+        "category": "음식점>한식",
+        "url": "https://app.catchtable.co.kr/ct/shop/rpwkd?type=WAITING&foodKeywords=%EB%82%AD%EB%A7%8C",
+        "x": 127.5554341,
+        "y": 34.9327828
+      },
+      {
+        "name": "어나더키친 스테이크하우스 순천",
+        "address": "전남광주통합특별시 순천시 왕지4길 18 2층",
+        "category": "음식점>패밀리레스토랑",
+        "url": "https://blog.naver.com/ssbarato",
+        "x": 127.5253358,
+        "y": 34.9680887
+      },
+      {
+        "name": "거목순대국밥",
+        "address": "전남광주통합특별시 순천시 장평로 50",
+        "category": "한식>국밥",
+        "url": "http://www.거목순대국밥.kr",
+        "x": 127.4942955,
+        "y": 34.9442192
+      },
+      {
+        "name": "나나방콕 순천호수공원점",
+        "address": "전남광주통합특별시 순천시 왕지4길 10 1층",
+        "category": "음식점>태국음식",
+        "url": "https://www.instagram.com/nanabangkok_suncheon",
+        "x": 127.5254011,
+        "y": 34.9689466
+      }
+    ]
+  },
+  "errors": []
+}
