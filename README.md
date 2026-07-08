@@ -206,9 +206,11 @@ API 키 유출 금지: .env 파일에 포함된 GEMINI_API_KEY, NAVER_CLIENT_ID,
   "errors": []
 }
 ```
----
+--터
 
 ## 7. md file
+
+root@309bfd7c44a0:/app/src# python3 local_search.py  --date 2020-02-21
 
 # ❄️ 2월의 끝자락, 겨울과 봄 사이의 낭만 여행 리포트
 
@@ -266,7 +268,19 @@ API 키 유출 금지: .env 파일에 포함된 GEMINI_API_KEY, NAVER_CLIENT_ID,
 
 ## 오류 요약(errors)
 - 발생한 오류 없음
+---
 
+## 캐시된 데이터
+root@309bfd7c44a0:/app/src# python3 local_search.py  --date 2020-02-21
+📅 여행 날짜: 2020년 02월 21일
+  📂 원본 데이터 로드 완료: results/2020-02-21_raw.json
+  ✅ 캐시 데이터 사용 (LLM 추천 + 맛집 검색 생략)
+  📂 리포트 파일 로드 완료: results/2020-02-21_report.md
+  ✅ 저장된 리포트 사용 (모든 API 호출 생략)
+
+==================================================
+📋 여행 리포트 - 캐시된 데이터
+==================================================
 ---
 
 ## 프로젝트 특징

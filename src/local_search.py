@@ -389,9 +389,7 @@ def _default_report(date_str: str, recommendation: dict, all_restaurants: dict, 
 
 # ── 메인 함수 ───────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="날짜 기반 국내 여행지 추천")
-    parser.add_argument("--date", type=parse_date, required=True, metavar="YYYY-MM-DD")
-    args = parser.parse_args()
+    args = parse_args()
 
     date_str = args.date.strftime("%Y-%m-%d")
     date_kor = args.date.strftime("%Y년 %m월 %d일")
