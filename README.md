@@ -30,7 +30,7 @@ NAVER_CLIENT_SECRET=your_naver_client_secret_here
 ```
 # 기본 실행
 
-python local_search.py --date YYYY-MM-DD
+python3 local_search.py --date YYYY-MM-DD
 ```
 
 - --date 파라미터는 필수이며, 2026-07-05와 같은 형식으로 입력해야 합니다.
