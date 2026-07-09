@@ -18,7 +18,17 @@
 - **Language**: Python 3.10 이상 권장
 - **Dependencies**: `requests`, `google-genai`, `python-dotenv`
 
-**패키지 설치 명령어:**
+
+
+**2-1 Docker**
+
+도커를 사용하여 환경을 구성한 후 도커 내에서 실행합니다.
+
+ [Docker 구성](./document/0.docker.md)
+
+
+
+**2.2 패키지 설치 명령어: (도커에서 스크립트로 존재하지만 따로 설치한다면)**
 
 ```
 pip install requests google-genai python-dotenv
@@ -29,7 +39,7 @@ pip install requests google-genai python-dotenv
 터미널(CLI) 환경에서 필수 파라미터인 `--date` 옵션과 함께 날짜를 `YYYY-MM-DD` 형식으로 입력하여 실행합니다.
 
 ```
-python main.py --date 2026-07-09
+python3 main.py --date 2026-07-09
 ```
 
 - **입력값 검증**: 날짜 형식이 올바르지 않거나 옵션이 누락된 경우, 프로그램은 실행을 즉시 중단하고 직관적인 한글 에러 메시지와 올바른 사용 예시를 출력합니다.
@@ -81,8 +91,6 @@ NAVER_CLIENT_SECRET="본인의_네이버_시크릿_키"
   - **네트워크/인증 오류 (HTTP 401/403 등)**: 네이버 API 호출 시 예외를 포착하여 프로그램 중단 없이 빈 리스트(`[]`)를 반환합니다. 이를 통해 맛집 섹션을 '데이터 없음'으로 유연하게 처리하고 다음 리포트 생성 단계로 무사히 넘어갈 수 있습니다.
   - **LLM 파싱 오류 (Hallucination)**: LLM이 JSON 형식을 어겼을 경우 즉각 실패 처리하지 않고, 최대 3회까지 재시도하는 로직을 구현하여 운영 안정성을 확보했습니다.
   - 모든 에러는 내부 로깅 시스템(`logging` 모듈)을 거쳐 최종 리포트 하단 `errors` 섹션에 요약됩니다.
-
-
 
 ## 7. json 구조
 
