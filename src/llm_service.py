@@ -40,7 +40,7 @@ def get_travel_recommendations(date_kor: str, errors: list) -> dict:
         "\"events\": [\"행사1\"], \"reason\": \"이유\"}"
     )
 
-    for attempt in range(1, 4):
+    for attempt in range(1, 3):
         try:
             response = client.models.generate_content(
                 model=os.getenv("GEMINI_MODEL_NAME"),
@@ -122,7 +122,7 @@ def generate_travel_report(date_str: str, rec: dict, restaurants: Dict[str, List
     ]
     final_report = ""
 
-    for attempt in range(1, 4):
+    for attempt in range(1, 3):
         try:
             response = client.models.generate_content(
                 model=os.getenv("GEMINI_MODEL_NAME"),

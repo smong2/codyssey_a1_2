@@ -42,8 +42,8 @@ def process_full_pipeline(date_str: str, date_kor: str, errors: list):
     print("\n[2/3] 맛집 검색 중 (네이버)...")
     restaurants = {}
     for city in recommendation.get("recommended_cities", []):
-        # [수정된 부분] errors를 빼고, 명시적으로 limit=5를 전달합니다!
-        raw_items = api.search_restaurants(f"{city} 맛집", limit=5)
+        # [수정됨] errors 리스트를 다시 파라미터로 넘겨줍니다.
+        raw_items = api.search_restaurants(f"{city} 맛집", errors=errors, limit=5)
         restaurants[city] = [api.Restaurant.from_naver_api(item) for item in raw_items]
 
     # Restaurant 객체를 딕셔너리로 변환하여 JSON 저장 에러 방지
