@@ -76,6 +76,10 @@ def process_cached_pipeline(date_str: str, cached_data: dict, errors: list):
     return report
 
 def main():
+    if not os.getenv("GEMINI_API_KEY") or not os.getenv("NAVER_CLIENT_ID"):
+        print("\n🚨 [오류] API 키가 설정되지 않았습니다. .env 파일을 확인하세요.")
+        sys.exit(1)
+
     args = parse_args()
     date_str = args.date.strftime("%Y-%m-%d")
     date_kor = args.date.strftime("%Y년 %m월 %d일")
