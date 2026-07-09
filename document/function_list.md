@@ -1,84 +1,60 @@
-## 프로젝트 주요 함수 정의서
+# 🐍 프로젝트 함수 명세서 (Function Reference)
 
-- 이 프로그램은 CLI 기반의 여행지 추천 및 리포트 자동 생성 시스템입니다. 각 함수는 데이터 흐름에 따라 체계적으로 설계되었습니다.
+프로젝트를 구성하는 4개의 핵심 파이썬 파일(`api_service.py`, `file_manager.py`, `llm_service.py`, `main.py`)에 정의된 함수들의 역할과 기능 요약입니다.
 
-### 1. 입력 및 검증
+## 1. `api_service.py` (외부 API 통신 담당)
 
-```
-parse_date(value: str) -> datetime
-parse_args()
-```
+외부 검색 API(네이버)와의 통신 및 데이터 변환을 담당하는 모듈입니다.
 
-- 설명: 사용자가 CLI로 입력한 날짜(YYYY-MM-DD) 문자열을 파이썬 datetime 객체로 변환하고 형식을 검증합니다. 잘못된 형식 입력 시 argparse.ArgumentTypeError를 발생시켜 프로그램 실행을 방지합니다.
+- `Restaurant.from_naver_api(cls, item: dict)` (클래스 메서드)
+  - 네이버 지역 검색 API가 반환한 원시 딕셔너리(`dict`) 데이터를 파싱하여, 내부에서 다루기 편한 `Restaurant` 데이터 객체로 변환합니다. KATEC 좌표를 WGS84 기반의 실수형(`float`) x, y 좌표로 변환하는 과정도 포함되어 있습니다.
+- `get_naver_images(query: str, display: int = 5) -> List[str]`
+  - 검색어(`query`)를 기반으로 네이버 이미지 검색 API를 호출하여, 이미지 URL 리스트를 가져오는 함수입니다.
+- `search_restaurants(query: str, limit: int = 5) -> List[dict]`
+  - 추천된 지역명을 기반으로 네이버 지역 검색 API(`local.json`)를 호출하여 맛집 데이터를 가져옵니다. 누락되는 결과를 방지하기 위해 관련도순(`random`)으로 결과를 반환합니다.
 
-### 2. 캐시 및 데이터 관리
+## 2. `file_manager.py` (파일 입출력 및 캐싱 담당)
 
-```
-_cache_path(date_str: str) -> Path
-```
+JSON 데이터 및 마크다운 리포트 파일의 로컬 입출력(I/O)을 담당하는 모듈입니다.
 
-- 설명: 특정 날짜에 대한 원본 데이터 저장 경로를 생성합니다(results/ 폴더 하위).
+- `get_cache_path(date_str: str) -> Path`
+  - 입력된 날짜를 기준으로 원본 JSON 데이터(캐시)가 저장될 파일 경로(`results/YYYY-MM-DD_raw.json`)를 생성하여 반환합니다.
+- `get_report_path(date_str: str) -> Path`
+  - 입력된 날짜를 기준으로 최종 여행 리포트가 저장될 마크다운 파일 경로(`results/YYYY-MM-DD_report.md`)를 생성하여 반환합니다.
+- `save_json_cache(date_str: str, data: dict) -> bool`
+  - LLM 추천 결과와 맛집 정보가 병합된 딕셔너리 데이터를 JSON 파일로 안전하게 기록(캐싱)합니다.
+- `load_json_cache(date_str: str) -> Optional[dict]`
+  - 저장된 JSON 캐시 파일이 있다면 읽어와 딕셔너리로 반환하고, 없거나 오류가 나면 `None`을 반환합니다.
+- `save_markdown_report(date_str: str, report: str) -> bool`
+  - 최종 완성된 텍스트 형태의 여행 리포트를 마크다운(`.md`) 파일 형식으로 기록합니다.
+- `load_markdown_report(date_str: str) -> Optional[str]`
+  - 저장된 리포트 파일이 존재할 경우 파일의 내용을 읽어와 문자열로 반환합니다.
 
-```
-_save_cache(date_str: str, data: dict)
-```
+## 3. `llm_service.py` (LLM 생성 및 데이터 파싱 담당)
 
-- 설명: API 호출로 수집된 데이터를 JSON 형식으로 파일에 저장합니다.
+Google Gemini AI를 호출하여 여행지를 추천받고 보고서를 생성하는 모듈입니다.
 
-```
-_load_cache(date_str: str) -> dict | None
-```
+- `_parse_llm_json(response_text: str) -> dict` (내부 유틸리티)
+  - LLM이 응답한 텍스트 데이터에 섞여 있는 마크다운 찌꺼기(예: `json` )를 깔끔하게 제거하고 순수 JSON 객체(딕셔너리)로 변환해 주는 전처리 함수입니다.
+- `get_travel_recommendations(date_kor: str, errors: list) -> dict`
+  - 해당 날짜에 어울리는 여행지, 날씨, 행사 정보를 담은 JSON 형태의 1차 추천 결과를 Gemini API로부터 생성받아 반환합니다. 형식이 어긋날 경우 최대 3회 재시도합니다.
+- `generate_travel_report(date_str: str, rec: dict, restaurants: Dict[str, List[Restaurant]], errors: list) -> str`
+  - 1차 추천 정보와 도시별 맛집 데이터를 바탕으로 Gemini API를 호출하여, 지정된 5개의 목차 양식(템플릿)을 엄격하게 지킨 최종 마크다운 여행 리포트를 작성합니다.
 
-- 설명: 이미 존재하는 캐시 데이터를 불러옵니다. 데이터가 있으면 API 호출을 생략하여 비용과 시간을 절약합니다.
+## 4. `main.py` (프로그램 흐름 및 CLI 제어 담당)
 
-```
-_save_report(date_str: str, report: str)
-```
+프로그램의 진입점(Entry Point)으로 파이프라인의 전체 흐름(Controller)을 관리합니다.
 
-- 설명: 최종 생성된 Markdown 형식의 여행 리포트를 파일로 저장합니다.
+- `parse_date(value: str) -> datetime`
+  - CLI로 입력받은 값이 정확한 날짜 포맷(`YYYY-MM-DD`)인지 검증하고 형 변환을 수행합니다. 실패 시 에러를 발생시킵니다.
+- `KoreanArgumentParser.error(self, message)` (메서드 덮어쓰기)
+  - 기본 `argparse`의 영어 에러 메시지를 차단하고, 직관적인 한글 에러 메시지와 올바른 사용 가이드를 제공하는 커스텀 에러 처리기입니다.
+- `parse_args()`
+  - CLI 명령어에서 `--date` 파라미터를 읽고 파싱 하는 역할을 합니다.
+- `process_full_pipeline(date_str: str, date_kor: str, errors: list)`
+  - 캐시된 파일이 없을 때 실행되는 **전체 자동화 파이프라인**입니다. (LLM 추천 ➜ 네이버 맛집 검색 ➜ 데이터 JSON 저장 ➜ 최종 리포트 생성 및 저장)
+- `process_cached_pipeline(date_str: str, cached_data: dict, errors: list)`
+  - 이미 저장된 원본 데이터(JSON 캐시)가 있을 때 실행되는 **우회 파이프라인**입니다. 불필요한 API 호출을 건너뛰고 기존 데이터를 객체화하여 리포트만 재사용 또는 재생성합니다.
+- `main()`
+  - 프로그램의 전체 진입 함수로, 인자 파싱 결과와 캐시 유무를 바탕으로 어떤 파이프라인을 실행할지 결정하고 최종 리포트 및 오류(Errors)를 터미널에 출력합니다.
 
-```
-_load_report(date_str: str) -> str | None
-```
-
-- 설명: 이미 생성된 리포트 파일이 있는지 확인하고 불러옵니다.
-
-### 3. API 연동 및 비즈니스 로직
-
-```
-get_recommendation(date_kor: str, errors: list) -> dict
-```
-
-- 설명: Gemini API를 사용하여 날짜에 맞는 여행지를 추천받습니다. JSON 파싱 실패 시 프롬프트를 보완하여 1회 재시도하는 로직이 포함되어 있습니다.
-
-```
-search_restaurants(city: str, errors: list, limit: int = 5) -> list
-```
-
-- 설명: 네이버 지역 검색 API를 통해 특정 도시의 맛집 정보를 수집합니다. 좌표 데이터(KATEC)를 위경도로 변환하며, 에러 발생 시 빈 리스트를 반환하여 프로그램의 안정성을 유지합니다.
-
-```
-generate_report(...) -> str
-```
-
-- 설명: 수집된 여행지 정보, 맛집, 에러 요약을 바탕으로 Gemini AI를 호출하여 최종 여행 리포트를 Markdown 형식으로 작성합니다. 섹션 누락 방지를 위한 검증 로직이 포함되어 있습니다.
-
-```
-_default_report(...) -> str
-```
-
-- 설명: 모든 API가 실패하거나 리포트 생성이 불가능할 경우, 수집된 데이터를 그대로 표기하는 기본 리포트를 생성합니다.
-
-```
- _default_recommendation() -> dict:
-```
-
-- 설명 : 추천 API 가 실패할 때 가져와서 사용할 수 있는 기본 추천지역을 담은 딕셔너리입니다.
-
-### 4. 실행 및 흐름 제어
-
-```
-main()
-```
-
-- 설명: 프로그램의 진입점입니다. argparse로 CLI 인자를 받고, 캐시 확인 -> API 호출 -> 결과 저장 -> 리포트 출력의 전 과정을 관장합니다. 발생한 모든 에러 정보를 errors 리스트에 담아 최종적으로 처리합니다.
