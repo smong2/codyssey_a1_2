@@ -9,16 +9,15 @@ import file_manager as fm
 import llm_service as llm
 import api_service as api
 
-load_dotenv()
+# [수정됨] override=True를 주어야 도커 환경에서도 수정된 .env를 실시간으로 덮어씁니다!
+load_dotenv(override=True)
 
-# ── 날짜 포맷 검증 함수 ──
 def parse_date(value: str) -> datetime:
     try:
         return datetime.strptime(value, "%Y-%m-%d")
     except ValueError:
         raise argparse.ArgumentTypeError(f"날짜 형식이 올바르지 않습니다: '{value}'")
 
-# ── 한글 에러 출력 파서 ──
 class KoreanArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         print("\n🚨 입력 오류가 발생했습니다.")
@@ -26,12 +25,11 @@ class KoreanArgumentParser(argparse.ArgumentParser):
             print("👉 필수 파라미터(--date)가 누락되었습니다.")
         else:
             print(f"👉 {message}")
-        print("💡 올바른 사용 예시: python main.py --date 2026-07-09\n")
+        print("💡 사용 예시: python main.py --date 2026-07-09\n")
         sys.exit(2)
 
-# ── 명령어 파싱 함수 ──
 def parse_args():
-    parser = KoreanArgumentParser(description="날짜 기반 국내 여행지 추천 리포트 생성기")
+    parser = KoreanArgumentParser(description="여행 리포트 생성기")
     parser.add_argument("--date", type=parse_date, required=True, metavar="YYYY-MM-DD")
     return parser.parse_args()
 
@@ -42,11 +40,9 @@ def process_full_pipeline(date_str: str, date_kor: str, errors: list):
     print("\n[2/3] 맛집 검색 중 (네이버)...")
     restaurants = {}
     for city in recommendation.get("recommended_cities", []):
-        # [수정됨] errors 리스트를 다시 파라미터로 넘겨줍니다.
         raw_items = api.search_restaurants(f"{city} 맛집", errors=errors, limit=5)
         restaurants[city] = [api.Restaurant.from_naver_api(item) for item in raw_items]
 
-    # Restaurant 객체를 딕셔너리로 변환하여 JSON 저장 에러 방지
     restaurants_dict = {
         city: [dataclasses.asdict(r) for r in r_list] 
         for city, r_list in restaurants.items()
