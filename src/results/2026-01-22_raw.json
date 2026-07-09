@@ -1,0 +1,39 @@
+{
+  "recommendation": {
+    "recommended_cities": [
+      "부산",
+      "경주",
+      "전주"
+    ],
+    "weather": "맑음",
+    "events": [],
+    "reason": "데이터 없음"
+  },
+  "restaurants": {
+    "부산": [],
+    "경주": [],
+    "전주": []
+  },
+  "errors": [
+    {
+      "step": "llm_recommendation",
+      "type": "API_ERROR",
+      "message": "Gemini 호출 실패 (2회 시도): 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+    },
+    {
+      "step": "place_search_부산",
+      "type": "AUTH_ERROR",
+      "message": "HTTP 401 (인증/쿼터 오류: 키 값을 확인하세요)"
+    },
+    {
+      "step": "place_search_경주",
+      "type": "AUTH_ERROR",
+      "message": "HTTP 401 (인증/쿼터 오류: 키 값을 확인하세요)"
+    },
+    {
+      "step": "place_search_전주",
+      "type": "AUTH_ERROR",
+      "message": "HTTP 401 (인증/쿼터 오류: 키 값을 확인하세요)"
+    }
+  ]
+}
