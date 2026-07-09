@@ -326,6 +326,43 @@ root@309bfd7c44a0:/app/src# python3 [main.py](http://main.py) --date 2026-07-09
 
 ---
 
+# 🗺️ 여행 리포트 (2026-01-22)
+
+## 1. 추천 지역 및 추천 이유
+추천 도시: 부산, 경주, 전주
+이유: 데이터 없음
+
+## 2. 날씨 요약
+맑음
+
+## 3. 행사 / 축제 목록
+- 데이터 없음
+
+## 4. 맛집 리스트
+
+### 부산
+- 데이터 없음 (장소 검색 결과 0건)
+
+### 경주
+- 데이터 없음 (장소 검색 결과 0건)
+
+### 전주
+- 데이터 없음 (장소 검색 결과 0건)
+
+## 5. 1일 여행 일정 제안
+- (LLM 생성 실패로 인해 세부 일정은 제공되지 않습니다.)
+
+## 오류 요약(errors)
+- **[llm_recommendation]**: API_ERROR - Gemini 호출 실패 (2회 시도): 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}
+- **[place_search_부산]**: AUTH_ERROR - HTTP 401 (인증/쿼터 오류: 키 값을 확인하세요)
+- **[place_search_경주]**: AUTH_ERROR - HTTP 401 (인증/쿼터 오류: 키 값을 확인하세요)
+- **[place_search_전주]**: AUTH_ERROR - HTTP 401 (인증/쿼터 오류: 키 값을 확인하세요)
+- **[report_generation_attempt_1]**: API_ERROR - 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}
+- **[report_generation_attempt_2]**: API_ERROR - 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}
+- **[report_generation_final]**: LLM_ERROR - 리포트 생성 최종 실패 (수동 리포트로 대체됨)
+
+---
+
 ## 프로젝트 특징
 
 안정적인 데이터 파이프라인: API 호출 실패 시에도 프로그램을 종료하지 않고, "데이터 없음" 처리 및 오류 기록을 통해 끝까지 리포트를 완성합니다. (최대 2회까지 재시도 수행)
